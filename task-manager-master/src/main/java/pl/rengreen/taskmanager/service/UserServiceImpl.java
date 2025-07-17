@@ -76,5 +76,23 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
     }
 
+    @Override
+    public String changePassword(String email, String currentPassword, String newPassword, String confirmPassword) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) return "User not found.";
+        if (!bCryptPasswordEncoder.matches(currentPassword, user.getPassword())) {
+            return "Current password is incorrect.";
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            return "New passwords do not match.";
+        }
+        if (newPassword.length() < 5) {
+            return "New password must be at least 5 characters.";
+        }
+        user.setPassword(bCryptPasswordEncoder.encode(newPassword));
+        userRepository.save(user);
+        return null;
+    }
+
 }
 

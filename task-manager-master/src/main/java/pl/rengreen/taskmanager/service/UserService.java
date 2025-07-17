@@ -18,4 +18,10 @@ public interface UserService {
     User getUserById(Long userId);
 
     void deleteUser(Long id);
+
+    /**
+     * Changes the password for the user with the given email.
+     * @return error message if failed, null if successful
+     */
+    String changePassword(String email, String currentPassword, String newPassword, String confirmPassword);
 }
