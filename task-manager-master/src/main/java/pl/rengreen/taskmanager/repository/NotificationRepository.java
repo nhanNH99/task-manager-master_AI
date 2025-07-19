@@ -4,16 +4,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import pl.rengreen.taskmanager.model.Notification;
-import pl.rengreen.taskmanager.model.User;
 
-import java.util.Optional;
+import java.util.List;
 
 /**
  * Repository for Notification entity.
  */
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    Page<Notification> findByUserOrderByScheduledAtDesc(User user, Pageable pageable);
+    Page<Notification> findByUserIdAndDeletedFalseOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
-    Optional<Notification> findByIdAndUser(Long id, User user);
+    List<Notification> findByIdInAndUserIdAndDeletedFalse(List<Long> ids, Long userId);
 }

@@ -1,90 +1,96 @@
-package pl.rengreen.taskmanager.service.impl;
+package pl.rengreen.taskmanager.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import pl.rengreen.taskmanager.dto.NotificationRequest;
-import pl.rengreen.taskmanager.dto.NotificationResponse;
+import org.springframework.transaction.annotation.Transactional;
+import pl.rengreen.taskmanager.dto.*;
 import pl.rengreen.taskmanager.model.Notification;
-import pl.rengreen.taskmanager.model.Task;
 import pl.rengreen.taskmanager.model.User;
 import pl.rengreen.taskmanager.repository.NotificationRepository;
-import pl.rengreen.taskmanager.repository.TaskRepository;
 import pl.rengreen.taskmanager.repository.UserRepository;
-import pl.rengreen.taskmanager.service.NotificationService;
 
 import javax.persistence.EntityNotFoundException;
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Implementation of NotificationService.
  */
 @Service
-@RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final TaskRepository taskRepository;
+
+    public NotificationServiceImpl(NotificationRepository notificationRepository, UserRepository userRepository) {
+        this.notificationRepository = notificationRepository;
+        this.userRepository = userRepository;
+    }
 
     @Override
+    @Transactional
     public NotificationResponse createNotification(NotificationRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        Task task = null;
-        if (request.getTaskId() != null) {
-            task = taskRepository.findById(request.getTaskId())
-                    .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        User user = null;
+        if (request.getUserId() != null) {
+            user = userRepository.findById(request.getUserId())
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
         }
-        Notification notification = Notification.builder()
-                .user(user)
-                .task(task)
-                .message(request.getMessage())
-                .scheduledAt(request.getScheduledAt())
-                .recurring(request.isRecurring())
-                .recurrenceType(request.getRecurrenceType())
-                .read(false)
-                .build();
-        notification = notificationRepository.save(notification);
+        Notification notification = new Notification();
+        notification.setMessage(request.getMessage());
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setRead(false);
+        notification.setDeleted(false);
+        notification.setUser(user);
+        Notification saved = notificationRepository.save(notification);
+        return toResponse(saved);
+    }
+
+    @Override
+    public Page<NotificationResponse> getNotifications(Long userId, String status, Pageable pageable) {
+        Page<Notification> page = notificationRepository.findByUserIdAndDeletedFalseOrderByCreatedAtDesc(userId, pageable);
+        return page.map(this::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public void markAsRead(Long userId, List<Long> notificationIds) {
+        List<Notification> notifications = notificationRepository.findByIdInAndUserIdAndDeletedFalse(notificationIds, userId);
+        if (notifications.size() != notificationIds.size()) {
+            throw new EntityNotFoundException("Some notifications not found or do not belong to user");
+        }
+        for (Notification n : notifications) {
+            n.setRead(true);
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    @Override
+    @Transactional
+    public void deleteNotifications(Long userId, List<Long> notificationIds) {
+        List<Notification> notifications = notificationRepository.findByIdInAndUserIdAndDeletedFalse(notificationIds, userId);
+        if (notifications.size() != notificationIds.size()) {
+            throw new EntityNotFoundException("Some notifications not found or do not belong to user");
+        }
+        for (Notification n : notifications) {
+            n.setDeleted(true);
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    @Override
+    public NotificationResponse getNotificationDetail(Long userId, Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .filter(n -> !n.isDeleted() && n.getUser().getId().equals(userId))
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found or does not belong to user"));
         return toResponse(notification);
-    }
-
-    @Override
-    public NotificationResponse getNotification(Long id, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        Notification notification = notificationRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new EntityNotFoundException("Notification not found"));
-        return toResponse(notification);
-    }
-
-    @Override
-    public Page<NotificationResponse> getNotificationsForUser(Long userId, Pageable pageable) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        return notificationRepository.findByUserOrderByScheduledAtDesc(user, pageable)
-                .map(this::toResponse);
-    }
-
-    @Override
-    public void markAsRead(Long id, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        Notification notification = notificationRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new EntityNotFoundException("Notification not found"));
-        notification.setRead(true);
-        notificationRepository.save(notification);
     }
 
     private NotificationResponse toResponse(Notification notification) {
         NotificationResponse response = new NotificationResponse();
         response.setId(notification.getId());
-        response.setUserId(notification.getUser().getId());
-        response.setTaskId(notification.getTask() != null ? notification.getTask().getId() : null);
         response.setMessage(notification.getMessage());
-        response.setScheduledAt(notification.getScheduledAt());
-        response.setRecurring(notification.isRecurring());
-        response.setRecurrenceType(notification.getRecurrenceType());
+        response.setCreatedAt(notification.getCreatedAt());
         response.setRead(notification.isRead());
         return response;
     }

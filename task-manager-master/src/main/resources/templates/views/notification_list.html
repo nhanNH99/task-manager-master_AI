@@ -1,0 +1,69 @@
+<!-- Notification List View -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Notifications</title>
+    <link rel="stylesheet" th:href="@{/css/mystyle.css}" />
+    <link rel="stylesheet" th:href="@{/css/flatly/bootstrap.min.css}" />
+  </head>
+  <body>
+    <div th:replace="fragments/header :: header('notifications')"></div>
+    <div class="container mt-4">
+      <h2>Notifications</h2>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Message</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="notification : ${notifications}">
+            <td th:text="${notification.message}"></td>
+            <td
+              th:text="${#dates.format(notification.createdAt, 'yyyy-MM-dd HH:mm')}"
+            ></td>
+            <td th:text="${notification.read ? 'Read' : 'Unread'}"></td>
+            <td>
+              <a
+                th:href="@{'/notifications/' + ${notification.id}}"
+                class="btn btn-info btn-sm"
+                >View</a
+              >
+              <form
+                th:action="@{'/notifications/' + ${notification.id} + '/read'}"
+                method="post"
+                style="display: inline"
+              >
+                <button
+                  type="submit"
+                  class="btn btn-success btn-sm"
+                  th:if="${!notification.read}"
+                >
+                  Mark as Read
+                </button>
+              </form>
+              <form
+                th:action="@{'/notifications'}"
+                method="post"
+                style="display: inline"
+              >
+                <input
+                  type="hidden"
+                  name="notificationIds"
+                  th:value="${notification.id}"
+                />
+                <button type="submit" class="btn btn-danger btn-sm">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div th:replace="fragments/footer :: footer"></div>
+  </body>
+</html>

@@ -1,32 +1,23 @@
 package pl.rengreen.taskmanager.service;
 
-import pl.rengreen.taskmanager.dto.NotificationRequest;
-import pl.rengreen.taskmanager.dto.NotificationResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import pl.rengreen.taskmanager.dto.*;
+
+import java.util.List;
 
 /**
- * Service for notification business logic.
+ * Service interface for notification operations.
  */
 public interface NotificationService {
 
-    /**
-     * Creates a new notification.
-     */
     NotificationResponse createNotification(NotificationRequest request);
 
-    /**
-     * Gets a notification by ID for a user.
-     */
-    NotificationResponse getNotification(Long id, Long userId);
+    Page<NotificationResponse> getNotifications(Long userId, String status, Pageable pageable);
 
-    /**
-     * Gets paginated notifications for a user.
-     */
-    Page<NotificationResponse> getNotificationsForUser(Long userId, Pageable pageable);
+    void markAsRead(Long userId, List<Long> notificationIds);
 
-    /**
-     * Marks a notification as read.
-     */
-    void markAsRead(Long id, Long userId);
+    void deleteNotifications(Long userId, List<Long> notificationIds);
+
+    NotificationResponse getNotificationDetail(Long userId, Long notificationId);
 }

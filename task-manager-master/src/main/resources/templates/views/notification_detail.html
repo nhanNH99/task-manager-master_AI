@@ -1,0 +1,33 @@
+<!-- Notification Detail View -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Notification Detail</title>
+    <link rel="stylesheet" th:href="@{/css/mystyle.css}" />
+    <link rel="stylesheet" th:href="@{/css/flatly/bootstrap.min.css}" />
+  </head>
+  <body>
+    <div th:replace="fragments/header :: header"></div>
+    <div class="container mt-4">
+      <h2>Notification Detail</h2>
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title" th:text="${notification.message}"></h5>
+          <p class="card-text">
+            <strong>Date:</strong>
+            <span
+              th:text="${#dates.format(notification.createdAt, 'yyyy-MM-dd HH:mm')}"
+            ></span
+            ><br />
+            <strong>Status:</strong>
+            <span th:text="${notification.read ? 'Read' : 'Unread'}"></span>
+          </p>
+          <a th:href="@{'/notifications'}" class="btn btn-primary"
+            >Back to List</a
+          >
+        </div>
+      </div>
+    </div>
+    <div th:replace="fragments/footer :: footer"></div>
+  </body>
+</html>

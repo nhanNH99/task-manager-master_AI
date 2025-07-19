@@ -1,66 +1,53 @@
 package pl.rengreen.taskmanager.model;
 
-import lombok.*;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Entity representing a notification for a user related to a task.
+ * Entity representing a user notification.
  */
 @Entity
 @Table(name = "notifications")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * The user who receives the notification.
-     */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    /**
-     * The task associated with the notification.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
-    private Task task;
-
-    /**
-     * Notification message.
-     */
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String message;
 
-    /**
-     * Time the notification is scheduled or sent.
-     */
     @Column(nullable = false)
-    private LocalDateTime scheduledAt;
+    private LocalDateTime createdAt;
 
-    /**
-     * Whether the notification is recurring.
-     */
-    @Column(nullable = false)
-    private boolean recurring;
-
-    /**
-     * Read/unread status.
-     */
     @Column(nullable = false)
     private boolean read;
 
-    /**
-     * Recurrence type (e.g., DAILY, NONE).
-     */
-    @Column(length = 20)
-    private String recurrenceType;
+    @Column(nullable = false)
+    private boolean deleted;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    public Notification() {}
+
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public boolean isRead() { return read; }
+    public void setRead(boolean read) { this.read = read; }
+
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }

@@ -1,21 +1,28 @@
 package pl.rengreen.taskmanager.dto;
 
-import lombok.Data;
-
 import java.time.LocalDateTime;
 
 /**
- * DTO for returning notification data.
+ * DTO for notification response.
  */
-@Data
 public class NotificationResponse {
 
     private Long id;
-    private Long userId;
-    private Long taskId;
     private String message;
-    private LocalDateTime scheduledAt;
-    private boolean recurring;
-    private String recurrenceType;
+    private LocalDateTime createdAt;
     private boolean read;
+
+    public NotificationResponse() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public boolean isRead() { return read; }
+    public void setRead(boolean read) { this.read = read; }
 }

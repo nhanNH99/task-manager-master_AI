@@ -25,6 +25,7 @@ public class InitialDataLoader implements ApplicationListener<ContextRefreshedEv
     private RoleService roleService;
     private final Logger logger = LoggerFactory.getLogger(InitialDataLoader.class);
     private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private pl.rengreen.taskmanager.service.NotificationService notificationService;
 
     @Value("${default.admin.mail}")
     private String defaultAdminMail;
@@ -35,11 +36,11 @@ public class InitialDataLoader implements ApplicationListener<ContextRefreshedEv
     @Value("${default.admin.image}")
     private String defaultAdminImage;
 
-    @Autowired
-    public InitialDataLoader(UserService userService, TaskService taskService, RoleService roleService) {
+    public InitialDataLoader(UserService userService, TaskService taskService, RoleService roleService, pl.rengreen.taskmanager.service.NotificationService notificationService) {
         this.userService = userService;
         this.taskService = taskService;
         this.roleService = roleService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -97,6 +98,53 @@ public class InitialDataLoader implements ApplicationListener<ContextRefreshedEv
                 "112233",
                 "images/kate.jpg"));
 
+        // Thêm các task demo cho manager làm owner
+        LocalDate today = LocalDate.now();
+        taskService.createTask(new Task(
+                "Prepare monthly report",
+                "Manager needs to prepare and submit the monthly report to the board.",
+                today.minusDays(3),
+                false,
+                "Admin",
+                userService.getUserByEmail("manager@mail.com")
+        ));
+
+        taskService.createTask(new Task(
+                "Review team performance",
+                "Manager reviews the performance of all team members for Q2.",
+                today.minusDays(7),
+                false,
+                "Admin",
+                userService.getUserByEmail("manager@mail.com")
+        ));
+
+        taskService.createTask(new Task(
+                "Approve budget proposal",
+                "Manager approves the new budget proposal for next quarter.",
+                today.minusDays(1),
+                false,
+                "Admin",
+                userService.getUserByEmail("manager@mail.com")
+        ));
+
+        taskService.createTask(new Task(
+                "Organize team meeting",
+                "Manager organizes a team meeting to discuss project progress.",
+                today.plusDays(2),
+                false,
+                "Admin",
+                userService.getUserByEmail("manager@mail.com")
+        ));
+
+        taskService.createTask(new Task(
+                "Update company policies",
+                "Manager updates the company policies for the new fiscal year.",
+                today.plusDays(5),
+                false,
+                "Admin",
+                userService.getUserByEmail("manager@mail.com")
+        ));
+
         //7
         userService.createUser(new User(
                 "tom@mail.com",
@@ -108,12 +156,65 @@ public class InitialDataLoader implements ApplicationListener<ContextRefreshedEv
                 .map(u -> "saved user: " + u.getName())
                 .forEach(logger::info);
 
+        // NOTIFICATIONS --------------------------------------------------------------------------------------------------------
+        // Add some initial notifications for demo users
+        // Demo notifications for various users
+        pl.rengreen.taskmanager.dto.NotificationRequest notification1 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification1.setMessage("Welcome to Task Manager, Mark!");
+        notification1.setUserId(userService.getUserByEmail("mark@mail.com").getId());
+        notificationService.createNotification(notification1);
+
+        pl.rengreen.taskmanager.dto.NotificationRequest notification2 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification2.setMessage("Your first task has been assigned.");
+        notification2.setUserId(userService.getUserByEmail("ann@mail.com").getId());
+        notificationService.createNotification(notification2);
+
+        pl.rengreen.taskmanager.dto.NotificationRequest notification3 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification3.setMessage("System maintenance scheduled for tomorrow.");
+        notification3.setUserId(null); // broadcast
+        notificationService.createNotification(notification3);
+
+        pl.rengreen.taskmanager.dto.NotificationRequest notification4 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification4.setMessage("You have 3 tasks due this week.");
+        notification4.setUserId(userService.getUserByEmail("ralf@mail.com").getId());
+        notificationService.createNotification(notification4);
+
+        pl.rengreen.taskmanager.dto.NotificationRequest notification5 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification5.setMessage("Kate, your profile was updated successfully.");
+        notification5.setUserId(userService.getUserByEmail("kate@mail.com").getId());
+        notificationService.createNotification(notification5);
+
+        pl.rengreen.taskmanager.dto.NotificationRequest notification6 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification6.setMessage("Tom, you have been assigned a new project.");
+        notification6.setUserId(userService.getUserByEmail("tom@mail.com").getId());
+        notificationService.createNotification(notification6);
+
+        pl.rengreen.taskmanager.dto.NotificationRequest notification7 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification7.setMessage("Ann, your password was changed.");
+        notification7.setUserId(userService.getUserByEmail("ann@mail.com").getId());
+        notificationService.createNotification(notification7);
+
+        pl.rengreen.taskmanager.dto.NotificationRequest notification8 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification8.setMessage("Manager, you have 2 unread notifications.");
+        notification8.setUserId(userService.getUserByEmail("manager@mail.com").getId());
+        notificationService.createNotification(notification8);
+
+        pl.rengreen.taskmanager.dto.NotificationRequest notification9 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification9.setMessage("Welcome to Task Manager, Ralf!");
+        notification9.setUserId(userService.getUserByEmail("ralf@mail.com").getId());
+        notificationService.createNotification(notification9);
+
+        pl.rengreen.taskmanager.dto.NotificationRequest notification10 = new pl.rengreen.taskmanager.dto.NotificationRequest();
+        notification10.setMessage("System update completed successfully.");
+        notification10.setUserId(null); // broadcast
+        notificationService.createNotification(notification10);
+
 
         //TASKS --------------------------------------------------------------------------------------------------------
         //tasks from Web Design Checklist
         //https://www.beewits.com/the-ultimate-web-design-checklist-things-to-do-when-launching-a-website/
 
-        LocalDate today = LocalDate.now();
+
 
         //1
         taskService.createTask(new Task(

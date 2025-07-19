@@ -1,70 +1,90 @@
+
 package pl.rengreen.taskmanager.controller;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import pl.rengreen.taskmanager.dto.NotificationDeleteRequest;
 import pl.rengreen.taskmanager.dto.NotificationRequest;
 import pl.rengreen.taskmanager.dto.NotificationResponse;
 import pl.rengreen.taskmanager.service.NotificationService;
 
 import javax.validation.Valid;
+import java.security.Principal;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.Collections;
 
-/**
- * REST controller for notifications.
- */
-@RestController
-@RequestMapping("/api/notifications")
-@RequiredArgsConstructor
-@Validated
+@Controller
 public class NotificationController {
 
-    private final NotificationService notificationService;
+    private NotificationService notificationService;
 
-    /**
-     * Creates a new notification.
-     */
-    @PostMapping
-    public ResponseEntity<NotificationResponse> createNotification(
-            @Valid @RequestBody NotificationRequest request) {
-        NotificationResponse response = notificationService.createNotification(request);
-        return ResponseEntity.ok(response);
+    @Autowired
+    public NotificationController(NotificationService notificationService) {
+        this.notificationService = notificationService;
     }
 
-    /**
-     * Gets a notification by ID for a user.
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<NotificationResponse> getNotification(
-            @PathVariable Long id,
-            @RequestParam Long userId) {
-        NotificationResponse response = notificationService.getNotification(id, userId);
-        return ResponseEntity.ok(response);
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/notifications/view")
+    public String listNotifications(Model model, Principal principal, @RequestParam(required = false) String status, Pageable pageable) {
+        Long userId = getUserIdFromPrincipal(principal);
+        Page<NotificationResponse> notifications = notificationService.getNotifications(userId, status, pageable);
+        model.addAttribute("notifications", notifications.getContent());
+        model.addAttribute("page", notifications);
+        return "views/notification_list";
     }
 
-    /**
-     * Gets paginated notifications for a user.
-     */
-    @GetMapping
-    public ResponseEntity<Page<NotificationResponse>> getNotificationsForUser(
-            @RequestParam Long userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<NotificationResponse> notifications = notificationService.getNotificationsForUser(
-                userId, PageRequest.of(page, size));
-        return ResponseEntity.ok(notifications);
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/notifications/{id}/view")
+    public String showNotificationDetail(@PathVariable Long id, Model model, Principal principal) {
+        Long userId = getUserIdFromPrincipal(principal);
+        NotificationResponse notification = notificationService.getNotificationDetail(userId, id);
+        model.addAttribute("notification", notification);
+        return "views/notification_detail";
     }
 
-    /**
-     * Marks a notification as read.
-     */
-    @PostMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(
-            @PathVariable Long id,
-            @RequestParam Long userId) {
-        notificationService.markAsRead(id, userId);
-        return ResponseEntity.ok().build();
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/notifications/create")
+    public String showCreateNotificationForm(Model model) {
+        model.addAttribute("notificationRequest", new NotificationRequest());
+        return "forms/notification-new";
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/notifications/create")
+    public String createNotification(@Valid NotificationRequest notificationRequest, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return "forms/notification-new";
+        }
+        notificationService.createNotification(notificationRequest);
+        return "redirect:/notifications/view";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/notifications/{id}/read")
+    public String markAsRead(@PathVariable Long id, Principal principal) {
+        Long userId = getUserIdFromPrincipal(principal);
+        notificationService.markAsRead(userId, Collections.singletonList(id));
+        return "redirect:/notifications/view";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/notifications/delete")
+    public String deleteNotifications(@Valid NotificationDeleteRequest request, Principal principal) {
+        Long userId = getUserIdFromPrincipal(principal);
+        notificationService.deleteNotifications(userId, request.getNotificationIds());
+        return "redirect:/notifications/view";
+    }
+
+    private Long getUserIdFromPrincipal(Principal principal) {
+        // TODO: Implement user ID extraction from Principal or SecurityContext
+        return 1L;
     }
 }

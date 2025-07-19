@@ -1,30 +1,24 @@
 package pl.rengreen.taskmanager.dto;
 
-import lombok.Data;
-
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-import java.time.LocalDateTime;
 
 /**
  * DTO for creating a notification.
  */
-@Data
 public class NotificationRequest {
 
-    @NotNull
-    private Long userId;
-
-    private Long taskId;
-
-    @NotNull
-    @Size(min = 1, max = 255)
+    @NotBlank
+    @Size(max = 500)
     private String message;
 
-    @NotNull
-    private LocalDateTime scheduledAt;
+    private Long userId;
 
-    private boolean recurring = false;
+    public NotificationRequest() {}
 
-    private String recurrenceType; // e.g., DAILY, NONE
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 }
